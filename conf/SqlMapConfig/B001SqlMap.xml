@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="B001">
+
+	<insert id="insertRecData" parameterClass="jp.terasoluna.batch.honoka.dto.RecData">
+		INSERT INTO REC
+		VALUES(
+		NEXT VALUE FOR rec_id_seq,
+		#ts_name#,
+		#title#,
+		#subtitle#,
+		#ch_name#,
+		#start_time#,
+		#end_time#,
+		null,
+		null,
+		#ts_status#,
+		'0')
+	</insert>
+
+
+	<select id="selectRecData" resultClass="jp.terasoluna.batch.honoka.dto.RecData">
+		SELECT TOP 1
+		REC.rec_id as rec_id,
+		REC.ts_name as ts_name,
+		REC.title as title,
+		REC.subtitle as subtitle,
+		FORMAT(REC.start_time, 'yyyyMMddHHmm') as start_time,
+		FORMAT(REC.end_time, 'yyyyMMddHHmm') as end_time,
+		REC.ch_name as ch_name,
+		CHANNEL.ch_id as ch_id
+		FROM REC
+		INNER JOIN CHANNEL
+		ON REC.ch_name = CHANNEL.ch_name
+		AND CHANNEL.delete_flag = '0'
+		WHERE REC.ts_name = #ts_name#
+		AND REC.ts_status = '0'
+		AND REC.delete_flag = '0'
+		ORDER BY start_time DESC
+	</select>
+
+	<insert id="insertProgramData" parameterClass="jp.terasoluna.batch.honoka.dto.ProgramData">
+		INSERT INTO PROGRAM
+		VALUES(
+		#program_id#,
+		#title_id#,
+		#subtitle#,
+		#count#,
+		#ch_id#,
+		#start_time#,
+		#end_time#,
+		'0')
+	</insert>
+
+	<insert id="insertTitleData" parameterClass="jp.terasoluna.batch.honoka.dto.TitleData">
+		INSERT INTO TITLE
+		VALUES(
+		#title_id#,
+		#title#,
+		#title_kana#,
+		#short_title#,
+		#first_broadcast#,
+		#destination#,
+		'0')
+	</insert>
+
+	<select id="countTitle" resultClass="jp.terasoluna.batch.honoka.dto.TitleCountData">
+		SELECT
+		count(*) as title_count
+		FROM TITLE
+		WHERE title_id = #title_id#
+		AND delete_flag = '0'
+	</select>
+
+	<select id="countProgram" resultClass="jp.terasoluna.batch.honoka.dto.ProgramCountData">
+		SELECT
+		count(*) as program_count
+		FROM PROGRAM
+		WHERE program_id = #program_id#
+		AND delete_flag = '0'
+	</select>
+
+	<select id="countVideo" resultClass="jp.terasoluna.batch.honoka.dto.CountData">
+		select
+		count(*) as count
+		FROM VIDEO
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="title_id">
+				title_id = #title_id#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="song_title">
+				song_title = #song_title#
+			</isNotEmpty>
+			<isNotEmpty prepend="and" property="artist">
+				artist = #artist#
+			</isNotEmpty>
+			AND delete_flag = '0'
+		</dynamic>
+	</select>
+
+	<insert id="insertEncData" parameterClass="jp.terasoluna.batch.honoka.dto.EncData">
+		INSERT INTO ENCODE
+		VALUES(
+		NEXT VALUE FOR enc_id_seq,
+		#source#,
+		#mp4_name#,
+		#preserved_date#,
+		#rec_id#,
+		#program_id#,
+		'0',
+		'0.0',
+		'0.0',
+		'0',
+		'0')
+	</insert>
+
+	<update id="updateTsStatus" parameterClass="jp.terasoluna.batch.honoka.dto.RecData">
+		UPDATE REC
+		SET ts_status = #ts_status#
+		WHERE rec_id = #rec_id#
+	</update>
+
+	<select id="getEncId" resultClass="jp.terasoluna.batch.honoka.dto.EncData">
+		SELECT TOP 1
+		enc_id as enc_id
+		FROM ENCODE
+		WHERE rec_id = #rec_id#
+		AND enc_status = '0'
+		AND delete_flag = '0'
+	</select>
+
+
+	<insert id="insertVideoData" parameterClass="jp.terasoluna.batch.honoka.dto.VideoData">
+		INSERT INTO VIDEO
+		VALUES(
+		NEXT VALUE FOR video_id_seq,
+		#title_id#,
+		#video_type#,
+		CAST((#song_title#) AS NVARCHAR(50)),
+		CAST((#artist#) AS NVARCHAR(100)),
+		CAST((#used_story#) AS NVARCHAR(50)),
+		null,
+		#video_status#,
+		'0')
+	</insert>
+
+	<update id="appendProgramInfo" parameterClass="jp.terasoluna.batch.honoka.dto.RecData">
+		UPDATE REC
+		SET title_id = #title_id# ,
+		program_id = #program_id#
+		WHERE rec_id = #rec_id#
+	</update>
+
+</sqlMap>
