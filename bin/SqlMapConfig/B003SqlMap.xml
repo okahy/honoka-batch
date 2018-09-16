@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="B003">
+
+	<select id="selectEncList" resultClass="jp.terasoluna.batch.honoka.dto.EncData">
+		SELECT
+		enc_id as enc_id,
+		source as source,
+		mp4_name as mp4_name,
+		preserved_date as preserved_date,
+		rec_id as rec_id,
+		program_id as program_id,
+		enc_format as enc_format,
+		start_sec as start_sec,
+		end_sec as end_sec,
+		enc_status as enc_status,
+		delete_flag as
+		 delete_flag
+		FROM ENCODE
+		WHERE enc_status = '1'
+		AND delete_flag = '0'
+		ORDER BY enc_id
+	</select>
+
+	<select id="selectTitle" resultClass="jp.terasoluna.batch.honoka.dto.TitleData">
+		SELECT TOP 1
+		t.title_id as
+		title_id,
+		t.title as title,
+		t.title_kana as title_kana,
+		t.short_title as
+		short_title,
+		t.first_broadcast as first_broadcast,
+		t.destination as
+		destination,
+		t.delete_flag as delete_flag
+		FROM ENCODE e
+		INNER JOIN
+		PROGRAM p
+		ON e.enc_id = #enc_id#
+		AND e.program_id = p.program_id
+		AND
+		e.delete_flag = '0'
+		AND p.delete_flag = '0'
+		INNER JOIN TITLE t
+		ON p.title_id = t.title_id
+		AND t.delete_flag = '0'
+	</select>
+
+	<update id="updateTsStatus" parameterClass="jp.terasoluna.batch.honoka.dto.RecData">
+		UPDATE REC
+		SET ts_status = #ts_status#
+		WHERE rec_id = #rec_id#
+	</update>
+
+	<update id="updateEncStatus" parameterClass="jp.terasoluna.batch.honoka.dto.EncData">
+		UPDATE ENCODE
+		SET enc_status = #enc_status#
+		WHERE enc_id = #enc_id#
+	</update>
+
+	<update id="updateVideoStatus" parameterClass="jp.terasoluna.batch.honoka.dto.VideoData">
+		UPDATE VIDEO
+		SET video_status = #video_status#
+		WHERE enc_id = #enc_id#
+	</update>
+
+	<select id="selectRecData" resultClass="jp.terasoluna.batch.honoka.dto.RecData">
+		SELECT TOP 1
+		rec_id,
+		ts_name,
+		title,
+		subtitle,
+		ch_name,
+		start_time,
+		end_time,
+		ts_status,
+		delete_flag
+		FROM REC
+		WHERE rec_id = #rec_id#
+	</select>
+
+	<select id="selectVideoData" resultClass="jp.terasoluna.batch.honoka.dto.VideoData">
+		select top 1
+		used_story as used_story
+		FROM VIDEO
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="title_id">
+				title_id = #title_id#
+			</isNotEmpty>
+			<isEmpty prepend="and" property="title_id">
+				title_id = null
+			</isEmpty>
+			<isNotEmpty prepend="and" property="song_title">
+				song_title = #song_title#
+			</isNotEmpty>
+			<isEmpty prepend="and" property="song_title">
+				song_title = null
+			</isEmpty>
+			<isNotEmpty prepend="and" property="artist">
+				artist = #artist#
+			</isNotEmpty>
+			<isEmpty prepend="and" property="artist">
+				artist = null
+			</isEmpty>
+			AND delete_flag = '0'
+		</dynamic>
+	</select>
+
+	<insert id="insertVideoData" parameterClass="jp.terasoluna.batch.honoka.dto.VideoData">
+		INSERT INTO VIDEO
+		VALUES(
+		NEXT VALUE FOR video_id_seq,
+		#title_id#,
+		#video_type#,
+		CAST((#song_title#) AS NVARCHAR(50)),
+		CAST((#artist#) AS NVARCHAR(100)),
+		CAST((#used_story#) AS NVARCHAR(50)),
+		null,
+		#video_status#,
+		'0')
+	</insert>
+
+	<update id="updateVideoData" parameterClass="jp.terasoluna.batch.honoka.dto.VideoData">
+		UPDATE VIDEO
+		SET used_story = #used_story#
+		<dynamic prepend="WHERE">
+			<isNotEmpty prepend="and" property="title_id">
+				title_id = #title_id#
+			</isNotEmpty>
+			<isEmpty prepend="and" property="title_id">
+				title_id = null
+			</isEmpty>
+			<isNotEmpty prepend="and" property="song_title">
+				song_title = #song_title#
+			</isNotEmpty>
+			<isEmpty prepend="and" property="song_title">
+				song_title = null
+			</isEmpty>
+			<isNotEmpty prepend="and" property="artist">
+				artist = #artist#
+			</isNotEmpty>
+			<isEmpty prepend="and" property="artist">
+				artist = null
+			</isEmpty>
+			AND delete_flag = '0'
+		</dynamic>
+	</update>
+
+</sqlMap>

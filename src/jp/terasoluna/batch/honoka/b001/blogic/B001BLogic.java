@@ -69,6 +69,8 @@ public class B001BLogic implements BLogic {
 			if (!dataFile.isFile() || !dataFile.getName().endsWith(".json")) {
 				continue;
 			}
+			
+			log.info(dataFile.getName() +"の登録処理を開始します。");
 
 			/*
 			 * １．録画ファイルのチェック
@@ -77,8 +79,7 @@ public class B001BLogic implements BLogic {
 			if (jsonFile == null) {
 				continue;
 			}
-			log.info("録画ファイル／JSONファイルが見つかりました。"
-					+ jsonFile.getName() +"の登録処理を開始します。");
+			log.info("録画ファイル／JSONファイルが見つかりました。登録処理を開始します。");
 
 			/*
 			 * ２．録画情報をファイルから取得
@@ -182,21 +183,39 @@ public class B001BLogic implements BLogic {
 	 * @return
 	 */
 	private File checkRecordedFile(File dataFile) {
-
+		
+		
 		// m2tsファイルを定義
 		File recordedFile = new File(Path.REC_FOLDER + "\\" + dataFile.getName().replace(".json", ".m2ts"));
 
 		// m2tsファイルの存在確認
 		if (!recordedFile.exists()) {
-			boolean ret_move_m2ts = false;
-			ret_move_m2ts = dataFile.renameTo(
-					new File(Path.MOVED_UNENC_PGDATA_FOLDER + "\\" + dataFile.getName()));
-			if (ret_move_m2ts) {
-				log.error("動画ファイルが見つかりませんでした。JSONファイルを移動しました。");
+			boolean ret_del_m2ts = false;
+			ret_del_m2ts = dataFile.delete();
+			if (ret_del_m2ts) {
+				log.error("動画ファイルが見つかりませんでした。JSONファイルを削除しました。");
 			} else {
-				log.error("動画ファイルが見つかりませんでした。また、JSONファイルの移動に失敗しました。");
+				log.error("動画ファイルが見つかりませんでした。また、JSONファイルの削除に失敗しました。");
 			}
+			
 			return null;
+			
+		// json, m2tsのサイズ確認
+		} else if (dataFile.length() == 0 || recordedFile.length() == 0) {
+			log.error("録画が失敗しています。JSONファイルサイズ：" + dataFile.length() 
+				+ " 動画ファイルサイズ：" + recordedFile.length());
+			
+			boolean ret_del_json = false;
+			boolean ret_del_m2ts = false;
+			ret_del_json = dataFile.delete();
+			ret_del_m2ts = recordedFile.delete();
+			if(ret_del_json && ret_del_m2ts) {
+				log.error("JSONファイル、動画ファイルを削除しました。");
+			} else {
+				log.error("JSONファイル、動画ファイルの削除に失敗しました。");
+			}
+			
+			return null;			
 		}
 
 		// ファイル名に置換対象文字があるかチェック
